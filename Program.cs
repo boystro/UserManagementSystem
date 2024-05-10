@@ -1,17 +1,32 @@
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Threading.RateLimiting;
+using UserManagementSystem.Database;
 
 namespace UserManagementSystem {
+
+    /// <summary>
+    /// Main Class
+    /// </summary>
     public static class Program {
+
+        /// <summary>
+        /// Main Function
+        /// </summary>
+        /// <param name="args"></param>
         public static void Main(string[] args) {
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddControllers();
+
+            builder.Services.AddDbContext<UserDbContext>(options => {
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultString"));
+            });
 
             builder.Services.AddRateLimiter((options) => {
                 options.AddFixedWindowLimiter(policyName: "fixed", options => {
@@ -76,8 +91,11 @@ namespace UserManagementSystem {
                     // Light Theme CSS
                     options.InjectStylesheet("/swagger-ui/material.css");
                     // Dark Theme CSS
-                    options.InjectStylesheet("/swagger-ui/one-dark.css");
+                    //options.InjectStylesheet("/swagger-ui/one-dark.css");
 
+                });
+                app.UseReDoc(options => {
+                    options.DocumentTitle = "User Management System | RBAC";
                 });
             }
 
@@ -89,6 +107,10 @@ namespace UserManagementSystem {
             app.UseStaticFiles();
 
             app.MapControllers();
+
+            app.UseCors(options => {
+                options.WithOrigins([]);
+            });
 
             app.Run();
         }
